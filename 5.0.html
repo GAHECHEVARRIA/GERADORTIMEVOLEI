@@ -1,0 +1,2396 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Times de Vôlei</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    
+    /* Background personalizado */
+    body {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      /* Link da imagem já implementado */
+      background: url('https://i.imgur.com/sDTiHoz.png') no-repeat center center fixed;
+      background-size: cover;
+      position: relative;
+    }
+    
+    /* Overlay semitransparente com opacidade reduzida para tornar o fundo mais visível */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.4); /* Reduzido de 0.7 para 0.4 */
+      z-index: -1;
+    }
+    
+    /* Título com a fonte BankGothic Md B */
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      text-shadow: 1px 1px 3px rgba(255,255,255,0.9), -1px -1px 3px rgba(255,255,255,0.9);
+      margin-bottom: 5px;
+      font-weight: bold;
+      font-family: "BankGothic Md BT", "BankGothic", "Bank Gothic", Arial, sans-serif;
+      letter-spacing: 1px;
+      font-size: 2.2em;
+    }
+    
+    /* Subtítulo com crédito do autor */
+    .author-credit {
+      text-align: center;
+      font-family: "Aharoni", "Arial Narrow", Arial, sans-serif;
+      font-size: 0.9em;
+      color: #34495e;
+      margin-bottom: 25px;
+      text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+      font-weight: bold;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Aumentado a opacidade dos elementos para melhorar legibilidade contra o fundo mais visível */
+    .player-form, .import-form {
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    
+    .form-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+    
+    input, button, select, textarea {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    textarea {
+      width: 100%;
+      height: 200px;
+      font-family: monospace;
+    }
+    
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      font-weight: bold;
+    }
+    
+    button:hover {
+      background-color: #2980b9;
+    }
+    
+    button#gerar-times, button#import-players {
+      padding: 12px 24px;
+      font-size: 1.1em;
+      margin-top: 10px;
+      background-color: #2ecc71;
+    }
+    
+    button#gerar-times:hover, button#import-players:hover {
+      background-color: #27ae60;
+    }
+    
+    .player-list {
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    
+    .player-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .player-info {
+      flex-grow: 1;
+    }
+    
+    .player-actions {
+      display: flex;
+      gap: 5px;
+    }
+    
+    .tabs {
+      display: flex;
+      margin-bottom: -1px;
+    }
+    
+    .tab {
+      padding: 10px 20px;
+      background-color: rgba(240,240,240,0.9);
+      border: 1px solid #ddd;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .tab.active {
+      background-color: rgba(255,255,255,0.95);
+      border-bottom: 1px solid white;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .teams {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .team {
+      flex: 1;
+      min-width: 300px;
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    
+    .team-header {
+      padding: 10px;
+      margin: -15px -15px 15px -15px;
+      border-radius: 8px 8px 0 0;
+      color: white;
+      text-align: center;
+      font-weight: bold;
+    }
+    
+    .team-header {
+      background-color: var(--team-color, #666);
+    }
+    
+    .team:nth-child(1) .team-header {
+      --team-color: #e74c3c;
+    }
+    
+    .team:nth-child(2) .team-header {
+      --team-color: #3498db;
+    }
+    
+    .team:nth-child(3) .team-header {
+      --team-color: #2ecc71;
+    }
+    
+    .team:nth-child(4) .team-header {
+      --team-color: #f39c12;
+    }
+    
+    .team:nth-child(5) .team-header {
+      --team-color: #9b59b6;
+    }
+    
+    .team:nth-child(6) .team-header {
+      --team-color: #1abc9c;
+    }
+    
+    .team-player {
+      padding: 8px;
+      margin-bottom: 5px;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .team-stats {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+      text-align: right;
+      font-weight: bold;
+    }
+    
+    .error {
+      color: red;
+      margin-top: 10px;
+      font-weight: bold;
+      text-shadow: 0px 0px 2px white;
+    }
+    
+    .success {
+      color: green;
+      margin-top: 10px;
+      font-weight: bold;
+      text-shadow: 0px 0px 2px white;
+    }
+    
+    .export-container {
+      margin-top: 20px;
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    
+    .export-teams {
+      width: 100%;
+      height: 200px;
+      font-family: monospace;
+      margin-top: 10px;
+      padding: 10px;
+      white-space: pre-wrap;
+    }
+    
+    .import-example {
+      font-family: monospace;
+      background-color: rgba(248,249,250,0.9);
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+    }
+    
+    /* Estilos para os modais */
+    #player-details-modal > div, 
+    #import-export-modal > div {
+      background-color: white;
+      border: 1px solid #ddd;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+    }
+    
+    /* Texto mais escuro para melhor legibilidade */
+    h2, h3, h4, p, label, .player-info {
+      color: #333;
+    }
+    
+    /* Estilo para a configuração de times */
+    .team-config {
+      background-color: rgba(245,245,245,0.85) !important;
+      border: 1px solid #ddd;
+    }
+    
+    /* Estilos para drag and drop */
+    .team-player.dragging {
+      opacity: 0.5;
+    }
+    
+    .team.drag-over {
+      border: 2px dashed #3498db;
+      background-color: rgba(52, 152, 219, 0.1);
+    }
+    
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+    
+    /* Destaque para times diferentes tamanhos */
+    .team-header .team-size-info {
+      font-size: 0.8em;
+      margin-top: 5px;
+      font-weight: normal;
+    }
+    
+    @media (max-width: 768px) {
+      .teams {
+        flex-direction: column;
+      }
+      .form-row {
+        flex-direction: column;
+        gap: 8px;
+      }
+      .form-row input, .form-row select {
+        width: 100%;
+      }
+      .player-item {
+        flex-direction: column;
+        padding: 10px 0;
+      }
+      .player-actions {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 8px;
+      }
+      .db-tools {
+        flex-direction: column;
+      }
+      .filter-tools {
+        width: 100%;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .db-actions {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Gerador de Times de Vôlei Equilibrados</h1>
+  <div class="author-credit">Created by: Gabriel Echevarria</div>
+  
+  <div class="container">
+    <div class="tabs">
+      <div class="tab active" data-tab="tab-database">Banco de Jogadores</div>
+      <div class="tab" data-tab="tab-generator">Gerar Times</div>
+    </div>
+    
+    <div id="tab-database" class="tab-content active">
+      <div class="player-form">
+        <h2>Adicionar Jogador ao Banco de Dados</h2>
+        <div class="form-row">
+          <input type="text" id="db-player-name" placeholder="Nome do jogador" required>
+          <select id="db-player-rating">
+            <option value="0">0 - Muito fraco</option>
+            <option value="1">1 - Fraco</option>
+            <option value="2">2 - Abaixo da média</option>
+            <option value="3">3 - Médio fraco</option>
+            <option value="4">4 - Médio</option>
+            <option value="5" selected>5 - Médio</option>
+            <option value="6">6 - Médio bom</option>
+            <option value="7">7 - Bom</option>
+            <option value="8">8 - Muito bom</option>
+            <option value="9">9 - Excelente</option>
+            <option value="10">10 - Profissional</option>
+          </select>
+          <button id="add-db-player">Adicionar ao Banco</button>
+        </div>
+        <div id="db-error-message" class="error"></div>
+      </div>
+      
+      <div class="player-list">
+        <h2>Banco de Dados de Jogadores (<span id="db-player-count">0</span>)</h2>
+        
+        <div class="db-tools" style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+          <div class="search-bar" style="flex: 1; min-width: 200px;">
+            <input type="text" id="db-search" placeholder="Buscar jogadores..." style="width: 100%;">
+          </div>
+          
+          <div class="filter-tools" style="display: flex; gap: 10px; align-items: center;">
+            <label for="rating-filter">Nível:</label>
+            <select id="rating-filter">
+              <option value="all">Todos</option>
+              <option value="0">0</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
+            
+            <label for="sort-by">Ordenar por:</label>
+            <select id="sort-by">
+              <option value="rating-desc">Nível (Maior→Menor)</option>
+              <option value="rating-asc">Nível (Menor→Maior)</option>
+              <option value="name-asc">Nome (A→Z)</option>
+              <option value="name-desc">Nome (Z→A)</option>
+              <option value="games-desc">Mais jogos</option>
+              <option value="recent">Recentemente atualizados</option>
+            </select>
+          </div>
+          
+          <div class="db-actions" style="display: flex; gap: 5px;">
+            <button id="export-db" style="background-color: #3498db;">Exportar Banco</button>
+            <button id="import-db" style="background-color: #f39c12;">Importar Banco</button>
+          </div>
+        </div>
+        
+        <div id="db-players-container"></div>
+        
+        <div id="player-details-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 1000;">
+          <div style="position: relative; width: 80%; max-width: 700px; background-color: white; margin: 50px auto; padding: 20px; border-radius: 8px; max-height: 80vh; overflow-y: auto;">
+            <span id="close-modal" style="position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer;">&times;</span>
+            <h2 id="modal-player-name">Detalhes do Jogador</h2>
+            <div id="modal-content"></div>
+          </div>
+        </div>
+        
+        <div id="import-export-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 1000;">
+          <div style="position: relative; width: 80%; max-width: 700px; background-color: white; margin: 50px auto; padding: 20px; border-radius: 8px; max-height: 80vh; overflow-y: auto;">
+            <span id="close-import-export-modal" style="position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer;">&times;</span>
+            <h2 id="import-export-title">Exportar/Importar Banco de Dados</h2>
+            <div>
+              <textarea id="import-export-data" style="width: 100%; height: 300px; font-family: monospace; margin-bottom: 10px;"></textarea>
+              <div style="display: flex; justify-content: space-between;">
+                <button id="copy-export-data" style="background-color: #3498db;">Copiar para Área de Transferência</button>
+                <button id="confirm-import" style="background-color: #e74c3c; display: none;">Confirmar Importação</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="tab-generator" class="tab-content">
+      <div class="import-form">
+        <h2>Importar Lista de Jogadores</h2>
+        <p>Cole a lista de jogadores no formato abaixo:</p>
+        <div class="import-example">
+1- Daniel<br>
+2- Matheus<br>
+3- Rodolfo<br>
+4- Fernanda<br>
+...
+        </div>
+        <textarea id="import-text" placeholder="Cole sua lista de jogadores aqui..."></textarea>
+        <div id="import-error" class="error"></div>
+        <div id="import-success" class="success"></div>
+        <button id="import-players">Importar Jogadores</button>
+        
+        <div class="form-row" style="margin-top: 20px;">
+          <input type="text" id="player-name" placeholder="Nome do jogador" required>
+          <select id="player-rating">
+            <option value="0">0 - Muito fraco</option>
+            <option value="1">1 - Fraco</option>
+            <option value="2">2 - Abaixo da média</option>
+            <option value="3">3 - Médio fraco</option>
+            <option value="4">4 - Médio</option>
+            <option value="5" selected>5 - Médio</option>
+            <option value="6">6 - Médio bom</option>
+            <option value="7">7 - Bom</option>
+            <option value="8">8 - Muito bom</option>
+            <option value="9">9 - Excelente</option>
+            <option value="10">10 - Profissional</option>
+          </select>
+          <button id="add-player">Adicionar</button>
+        </div>
+        <div id="error-message" class="error"></div>
+
+        <div class="team-config" style="margin-top: 20px; background-color: rgba(245,245,245,0.8); padding: 15px; border-radius: 8px;">
+          <h3 style="margin-top: 0;">Configuração dos Times</h3>
+          
+          <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+            <div style="flex: 1; min-width: 200px;">
+              <label for="players-per-team">Jogadores por time:</label>
+              <input type="number" id="players-per-team" min="2" max="12" value="6" style="width: 60px; margin-left: 10px;">
+            </div>
+            
+            <div style="flex: 1; min-width: 200px;">
+              <label for="number-of-teams">Quantidade de times:</label>
+              <select id="number-of-teams" style="width: 60px; margin-left: 10px;">
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+            </div>
+          </div>
+          
+          <div id="team-colors" style="margin-top: 15px;">
+            <h4>Cores dos Times</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;" id="team-color-inputs">
+              <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                <label>Time 1:</label>
+                <input type="color" data-team="1" value="#e74c3c" style="margin-left: 10px;">
+              </div>
+              <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                <label>Time 2:</label>
+                <input type="color" data-team="2" value="#3498db" style="margin-left: 10px;">
+              </div>
+              <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                <label>Time 3:</label>
+                <input type="color" data-team="3" value="#2ecc71" style="margin-left: 10px;">
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <button id="gerar-times" style="margin-top: 20px;">Gerar Times Equilibrados</button>
+      </div>
+      
+      <div class="player-list">
+        <h2>Lista de Jogadores para Times (<span id="player-count">0</span>)</h2>
+        <div id="players-container"></div>
+      </div>
+      
+      <div id="teams-container" class="teams"></div>
+      
+      <div class="export-container" style="display:none" id="export-section">
+        <h2>Exportar Times</h2>
+        <textarea id="export-teams" class="export-teams" readonly></textarea>
+        <button id="copy-export" style="margin-top: 10px">Copiar para Área de Transferência</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Estado do aplicativo
+  let players = [];
+  let dbPlayers = loadDbPlayers(); // Carrega jogadores do banco de dados do localStorage
+  let editingPlayerId = null;
+  let editingDbPlayerId = null;
+  
+  // Checar se existe uma lista de jogadores salva no localStorage e removê-la
+  if(localStorage.getItem('volleyPlayers')) {
+    localStorage.removeItem('volleyPlayers');
+  }
+  
+  // Função para carregar jogadores do banco de dados do localStorage
+  function loadDbPlayers() {
+    const savedPlayers = localStorage.getItem('volleyDbPlayers');
+    if (savedPlayers) {
+      try {
+        return JSON.parse(savedPlayers);
+      } catch (e) {
+        console.error("Erro ao carregar jogadores do localStorage:", e);
+        return [];
+      }
+    }
+    return [];
+  }
+  
+  // Referencias aos elementos DOM
+  const playerNameInput = document.getElementById('player-name');
+  const playerRatingSelect = document.getElementById('player-rating');
+  const addPlayerButton = document.getElementById('add-player');
+  const generateTeamsButton = document.getElementById('gerar-times');
+  const playersContainer = document.getElementById('players-container');
+  const teamsContainer = document.getElementById('teams-container');
+  const playerCountElement = document.getElementById('player-count');
+  const errorMessageElement = document.getElementById('error-message');
+  const importTextArea = document.getElementById('import-text');
+  const importButton = document.getElementById('import-players');
+  const importErrorElement = document.getElementById('import-error');
+  const importSuccessElement = document.getElementById('import-success');
+  const exportSection = document.getElementById('export-section');
+  const exportTeamsArea = document.getElementById('export-teams');
+  const copyExportButton = document.getElementById('copy-export');
+  
+  // Elementos do banco de dados
+  const dbPlayerNameInput = document.getElementById('db-player-name');
+  const dbPlayerRatingSelect = document.getElementById('db-player-rating');
+  const addDbPlayerButton = document.getElementById('add-db-player');
+  const dbPlayersContainer = document.getElementById('db-players-container');
+  const dbPlayerCountElement = document.getElementById('db-player-count');
+  const dbErrorMessageElement = document.getElementById('db-error-message');
+  
+  // Elementos de busca e filtro
+  const dbSearchInput = document.getElementById('db-search');
+  const ratingFilterSelect = document.getElementById('rating-filter');
+  const sortBySelect = document.getElementById('sort-by');
+  const exportDbButton = document.getElementById('export-db');
+  const importDbButton = document.getElementById('import-db');
+  
+  // Elementos de modal
+  const playerDetailsModal = document.getElementById('player-details-modal');
+  const closeModalButton = document.getElementById('close-modal');
+  const modalPlayerName = document.getElementById('modal-player-name');
+  const modalContent = document.getElementById('modal-content');
+  
+  // Elementos de modal de importação/exportação
+  const importExportModal = document.getElementById('import-export-modal');
+  const closeImportExportModalButton = document.getElementById('close-import-export-modal');
+  const importExportTitle = document.getElementById('import-export-title');
+  const importExportData = document.getElementById('import-export-data');
+  const copyExportDataButton = document.getElementById('copy-export-data');
+  const confirmImportButton = document.getElementById('confirm-import');
+  
+  // Elementos de configuração dos times
+  const playersPerTeamInput = document.getElementById('players-per-team');
+  const numberOfTeamsSelect = document.getElementById('number-of-teams');
+  const teamColorInputs = document.getElementById('team-color-inputs');
+  
+  // Event listener para atualizar a quantidade de seletores de cores
+  numberOfTeamsSelect.addEventListener('change', updateTeamColorInputs);
+  
+  // Função para atualizar os inputs de cores dos times
+  function updateTeamColorInputs() {
+    const numberOfTeams = parseInt(numberOfTeamsSelect.value);
+    
+    // Os diferentes valores de cor para os times
+    const defaultColors = [
+      '#e74c3c', // Vermelho
+      '#3498db', // Azul
+      '#2ecc71', // Verde
+      '#f39c12', // Laranja
+      '#9b59b6', // Roxo
+      '#1abc9c'  // Turquesa
+    ];
+    
+    // Limpar todos os inputs de cor
+    teamColorInputs.innerHTML = '';
+    
+    // Criar inputs para cada time
+    for (let i = 1; i <= numberOfTeams; i++) {
+      const colorInput = document.createElement('div');
+      colorInput.style.display = 'flex';
+      colorInput.style.alignItems = 'center';
+      colorInput.style.marginBottom = '5px';
+      
+      const colorLabel = document.createElement('label');
+      colorLabel.textContent = `Time ${i}:`;
+      
+      const colorPicker = document.createElement('input');
+      colorPicker.type = 'color';
+      colorPicker.dataset.team = i;
+      colorPicker.value = defaultColors[i - 1] || '#666666';
+      colorPicker.style.marginLeft = '10px';
+      
+      // Evento para aplicar cores em tempo real
+      colorPicker.addEventListener('change', function() {
+        document.documentElement.style.setProperty(`--team-${i}-color`, this.value);
+      });
+      
+      colorInput.appendChild(colorLabel);
+      colorInput.appendChild(colorPicker);
+      
+      teamColorInputs.appendChild(colorInput);
+    }
+  }
+  
+  // Event listeners para o modal de detalhes do jogador
+  closeModalButton.addEventListener('click', function() {
+    playerDetailsModal.style.display = 'none';
+  });
+  
+  // Fechar modal ao clicar fora
+  playerDetailsModal.addEventListener('click', function(event) {
+    if (event.target === playerDetailsModal) {
+      playerDetailsModal.style.display = 'none';
+    }
+  });
+  
+  // Event listeners para o modal de importação/exportação
+  closeImportExportModalButton.addEventListener('click', function() {
+    importExportModal.style.display = 'none';
+  });
+  
+  // Fechar modal ao clicar fora
+  importExportModal.addEventListener('click', function(event) {
+    if (event.target === importExportModal) {
+      importExportModal.style.display = 'none';
+    }
+  });
+  
+  // Adicionar botão de limpar lista
+  const clearPlayersListBtn = document.createElement('button');
+  clearPlayersListBtn.textContent = 'Limpar Lista';
+  clearPlayersListBtn.style.backgroundColor = '#e74c3c';
+  clearPlayersListBtn.style.marginBottom = '10px';
+  clearPlayersListBtn.addEventListener('click', function() {
+    if (confirm('Tem certeza que deseja limpar toda a lista de jogadores?')) {
+      // Limpar a lista de jogadores e remover qualquer storage
+      players = [];
+      localStorage.removeItem('volleyPlayers');
+      updatePlayersList();
+      
+      // Atualizar diretamente o contador no DOM
+      const playerCount = document.querySelector('#player-count');
+      if (playerCount) {
+        playerCount.textContent = '0';
+      }
+    }
+  });
+  
+  // Inserir o botão depois do título da lista de jogadores
+  const playerListTitle = document.querySelector('#tab-generator .player-list h2');
+  if (playerListTitle) {
+    // Criar container para os botões e o título
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.style.display = 'flex';
+    buttonsContainer.style.justifyContent = 'space-between';
+    buttonsContainer.style.alignItems = 'center';
+    buttonsContainer.style.marginBottom = '10px';
+    
+    // Preservar o HTML original do título incluindo o span de contagem
+    const titleHTML = playerListTitle.innerHTML;
+    
+    // Criar um novo elemento para o título
+    const newTitle = document.createElement('h2');
+    newTitle.innerHTML = titleHTML;
+    
+    // Certifica-se de que o span continua sendo o playerCountElement
+    const newCountSpan = newTitle.querySelector('#player-count');
+    if (newCountSpan) {
+      // Substituir a referência do playerCountElement para apontar para o novo span
+      Object.defineProperty(window, 'playerCountElement', {
+        value: newCountSpan,
+        writable: true
+      });
+      // Atualizar a contagem imediatamente
+      newCountSpan.textContent = players.length;
+    }
+    
+    buttonsContainer.appendChild(newTitle);
+    
+    // Criar container para os botões
+    const buttonGroup = document.createElement('div');
+    buttonGroup.style.display = 'flex';
+    buttonGroup.style.gap = '10px';
+    
+    // Adicionar botões ao grupo
+    buttonGroup.appendChild(clearPlayersListBtn);
+    
+    // Adicionar botão de carregar exemplos
+    const loadExamplePlayersBtn = document.createElement('button');
+    loadExamplePlayersBtn.textContent = 'Carregar Exemplos';
+    loadExamplePlayersBtn.style.backgroundColor = '#3498db';
+    
+    loadExamplePlayersBtn.addEventListener('click', function() {
+      // Somente carregar exemplos se a lista estiver vazia
+      if (players.length === 0 || confirm('Isso substituirá a lista atual de jogadores. Continuar?')) {
+        players = []; // Limpar a lista atual
+        
+        const examplePlayers = [
+          { name: "Gabriel Cabelo", rating: 8 },
+          { name: "Gary", rating: 3 },
+          { name: "Joaozinho", rating: 5 },
+          { name: "Lucas Alexandre", rating: 6 },
+          { name: "Júlio", rating: 4 },
+          { name: "Yago", rating: 3 },
+          { name: "Jair", rating: 7 },
+          { name: "Silvio", rating: 5 },
+          { name: "Karla", rating: 2 },
+          { name: "Pedro", rating: 6 },
+          { name: "Alexandre", rating: 7 },
+          { name: "Gustavo", rating: 4 },
+          { name: "Mariana", rating: 6 },
+          { name: "Diana", rating: 5 },
+          { name: "Renato", rating: 8 },
+          { name: "Felipe", rating: 4 },
+          { name: "Roberta", rating: 7 }
+        ];
+        
+        examplePlayers.forEach(player => {
+          players.push({
+            id: Date.now() + Math.random(),
+            name: player.name,
+            rating: player.rating
+          });
+        });
+        
+        updatePlayersList();
+        
+        // Atualizar manualmente a contagem
+        const countSpan = document.querySelector('#player-count');
+        if (countSpan) {
+          countSpan.textContent = players.length;
+        }
+      }
+    });
+    
+    buttonGroup.appendChild(loadExamplePlayersBtn);
+    
+    // Adicionar grupo de botões ao container principal
+    buttonsContainer.appendChild(buttonGroup);
+    
+    // Substituir o título original pelo container
+    playerListTitle.parentNode.replaceChild(buttonsContainer, playerListTitle);
+  }
+  
+  // Exportar banco de dados
+  exportDbButton.addEventListener('click', function() {
+    importExportTitle.textContent = 'Exportar Banco de Dados';
+    importExportData.value = JSON.stringify(dbPlayers, null, 2);
+    copyExportDataButton.style.display = 'block';
+    confirmImportButton.style.display = 'none';
+    importExportModal.style.display = 'block';
+  });
+  
+  // Copiar dados de exportação
+  copyExportDataButton.addEventListener('click', function() {
+    importExportData.select();
+    document.execCommand('copy');
+    this.textContent = 'Copiado!';
+    setTimeout(() => {
+      this.textContent = 'Copiar para Área de Transferência';
+    }, 2000);
+  });
+  
+  // Importar banco de dados
+  importDbButton.addEventListener('click', function() {
+    importExportTitle.textContent = 'Importar Banco de Dados';
+    importExportData.value = '';
+    importExportData.placeholder = 'Cole aqui os dados do banco de dados...';
+    copyExportDataButton.style.display = 'none';
+    confirmImportButton.style.display = 'block';
+    importExportModal.style.display = 'block';
+  });
+  
+  // Confirmar importação
+  confirmImportButton.addEventListener('click', function() {
+    try {
+      const importedData = JSON.parse(importExportData.value);
+      
+      if (!Array.isArray(importedData)) {
+        throw new Error('Os dados importados não estão no formato correto. Deve ser um array.');
+      }
+      
+      const validPlayers = importedData.filter(player => {
+        return player && typeof player === 'object' && 
+               player.name && typeof player.name === 'string' &&
+               typeof player.rating === 'number';
+      });
+      
+      if (validPlayers.length === 0) {
+        throw new Error('Nenhum jogador válido encontrado nos dados importados.');
+      }
+      
+      if (confirm(`Foram encontrados ${validPlayers.length} jogadores válidos. Deseja substituir o banco de dados atual?`)) {
+        dbPlayers = validPlayers;
+        saveDbPlayers();
+        updateDbPlayersList();
+        importExportModal.style.display = 'none';
+        alert(`Importação concluída! ${validPlayers.length} jogadores importados com sucesso.`);
+      }
+    } catch (error) {
+      alert('Erro ao importar dados: ' + error.message);
+    }
+  });
+  
+  // Busca e filtros
+  dbSearchInput.addEventListener('input', updateDbPlayersList);
+  ratingFilterSelect.addEventListener('change', updateDbPlayersList);
+  sortBySelect.addEventListener('change', updateDbPlayersList);
+  
+  // Função para exibir detalhes de um jogador
+  function showPlayerDetails(player) {
+    modalPlayerName.textContent = player.name;
+    
+    let content = `
+      <div style="margin-bottom: 20px;">
+        <p><strong>Nível atual:</strong> ${player.rating} / 10</p>
+        <p><strong>Jogos participados:</strong> ${player.gamesPlayed || 0}</p>
+        <p><strong>Data de cadastro:</strong> ${formatDate(player.dateAdded)}</p>
+        <p><strong>Última atualização:</strong> ${formatDate(player.lastUpdated)}</p>
+      </div>
+    `;
+    
+    if (player.teams && player.teams.length > 0) {
+      content += `<h3>Histórico de Times</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <thead>
+          <tr>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Data</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Time</th>
+          </tr>
+        </thead>
+        <tbody>`;
+      
+      // Ordenar times do mais recente para o mais antigo
+      const sortedTeams = [...player.teams].sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      sortedTeams.forEach(team => {
+        content += `
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;">${formatDate(team.date)}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">Time ${team.teamNumber}</td>
+          </tr>
+        `;
+      });
+      
+      content += `</tbody></table>`;
+      
+      // Adicionar gráfico ou estatísticas
+      const teamCounts = countTeamOccurrences(player.teams);
+      content += `
+        <h3>Distribuição por Times</h3>
+        <div style="display: flex; margin-top: 10px;">
+      `;
+      
+      for (let i = 1; i <= 3; i++) {
+        const count = teamCounts[i] || 0;
+        const percentage = player.teams.length > 0 ? Math.round((count / player.teams.length) * 100) : 0;
+        
+        content += `
+          <div style="flex: 1; text-align: center;">
+            <div style="font-weight: bold; margin-bottom: 5px;">Time ${i}</div>
+            <div style="width: 30px; height: ${Math.max(percentage, 5)}px; background-color: ${getTeamColor(i)}; margin: 0 auto;"></div>
+            <div>${count} (${percentage}%)</div>
+          </div>
+        `;
+      }
+      
+      content += `</div>`;
+    } else {
+      content += `<p><em>Este jogador ainda não participou de nenhum time.</em></p>`;
+    }
+    
+    modalContent.innerHTML = content;
+    playerDetailsModal.style.display = 'block';
+  }
+  
+  // Função para formatar datas
+  function formatDate(dateString) {
+    if (!dateString) return 'Desconhecida';
+    
+    const date = new Date(dateString);
+    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  }
+  
+  // Função para contar ocorrências de cada time
+  function countTeamOccurrences(teams) {
+    if (!teams) return {};
+    
+    const counts = {};
+    teams.forEach(team => {
+      counts[team.teamNumber] = (counts[team.teamNumber] || 0) + 1;
+    });
+    
+    return counts;
+  }
+  
+  // Função para obter cor do time
+  function getTeamColor(teamNumber) {
+    const colors = {
+      1: '#e74c3c',
+      2: '#3498db',
+      3: '#2ecc71'
+    };
+    
+    return colors[teamNumber] || '#999';
+  }
+  
+  // Adicionar jogador ao banco de dados
+  addDbPlayerButton.addEventListener('click', function() {
+    const name = dbPlayerNameInput.value.trim();
+    const rating = parseInt(dbPlayerRatingSelect.value);
+    
+    if (!name) {
+      showDbError('Por favor, digite o nome do jogador.');
+      return;
+    }
+    
+    // Verificar se já existe um jogador com mesmo nome
+    const existingPlayer = dbPlayers.find(p => 
+      p.name.toLowerCase() === name.toLowerCase() && 
+      p.id !== editingDbPlayerId
+    );
+    
+    if (existingPlayer && !confirm(`Já existe um jogador chamado "${name}" no banco de dados. Deseja adicionar mesmo assim?`)) {
+      return;
+    }
+    
+    if (editingDbPlayerId !== null) {
+      // Atualizar jogador existente
+      const playerIndex = dbPlayers.findIndex(p => p.id === editingDbPlayerId);
+      if (playerIndex !== -1) {
+        dbPlayers[playerIndex].name = name;
+        dbPlayers[playerIndex].rating = rating;
+        // Adicionar data de atualização
+        dbPlayers[playerIndex].lastUpdated = new Date().toISOString();
+      }
+      editingDbPlayerId = null;
+      addDbPlayerButton.textContent = 'Adicionar ao Banco';
+    } else {
+      // Adicionar novo jogador
+      const newPlayer = {
+        id: Date.now(),
+        name: name,
+        rating: rating,
+        dateAdded: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
+        gamesPlayed: 0,
+        teams: [] // Histórico de times
+      };
+      dbPlayers.push(newPlayer);
+    }
+    
+    dbPlayerNameInput.value = '';
+    dbPlayerRatingSelect.value = '5';
+    updateDbPlayersList();
+    clearDbError();
+  });
+  
+  // Adicionar jogador para geração de times
+  addPlayerButton.addEventListener('click', function() {
+    const name = playerNameInput.value.trim();
+    const rating = parseInt(playerRatingSelect.value);
+    
+    if (!name) {
+      showError('Por favor, digite o nome do jogador.');
+      return;
+    }
+    
+    // Verificar se já existe um jogador com mesmo nome (ignorando maiúsculas/minúsculas)
+    const isDuplicate = players.some(p => 
+      p.name.toLowerCase() === name.toLowerCase() && 
+      p.id !== editingPlayerId
+    );
+    
+    if (isDuplicate) {
+      showError(`Já existe um jogador chamado "${name}" na lista. Use um nome diferente.`);
+      return;
+    }
+    
+    if (editingPlayerId !== null) {
+      // Atualizar jogador existente
+      const playerIndex = players.findIndex(p => p.id === editingPlayerId);
+      if (playerIndex !== -1) {
+        players[playerIndex].name = name;
+        players[playerIndex].rating = rating;
+      }
+      editingPlayerId = null;
+      addPlayerButton.textContent = 'Adicionar';
+    } else {
+      // Adicionar novo jogador
+      const newPlayer = {
+        id: Date.now(),
+        name: name,
+        rating: rating
+      };
+      players.push(newPlayer);
+    }
+    
+    playerNameInput.value = '';
+    playerRatingSelect.value = '5';
+    updatePlayersList();
+    clearError();
+  });
+  
+  // Função para extrair jogadores da lista numerada
+  function parsePlayersList(text) {
+    const lines = text.split('\n');
+    const players = [];
+    let foundInDb = 0;
+    
+    // Expressão regular para encontrar linhas no formato "1- Nome" ou "1 - Nome"
+    const playerRegex = /^\s*(\d+)[\s-]+(.+)$/;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      const match = line.match(playerRegex);
+      if (match && match[2]) {
+        const playerName = match[2].trim();
+        
+        // Buscar jogador no banco de dados (ignorando maiúsculas/minúsculas)
+        const dbPlayer = dbPlayers.find(p => 
+          p.name.toLowerCase() === playerName.toLowerCase()
+        );
+        
+        let rating = 5; // Valor padrão
+        
+        // Se encontrou no banco de dados, usar o rating do banco
+        if (dbPlayer) {
+          rating = dbPlayer.rating;
+          foundInDb++;
+        }
+        
+        // Adicionar jogador à lista com o rating apropriado
+        players.push({
+          name: playerName,
+          rating: rating
+        });
+      }
+    }
+    
+    return {
+      players,
+      foundInDb
+    };
+  }
+  
+  // Importar jogadores da lista
+  importButton.addEventListener('click', function() {
+    const text = importTextArea.value.trim();
+    if (!text) {
+      showImportError('Por favor, cole sua lista de jogadores.');
+      return;
+    }
+    
+    try {
+      const result = parsePlayersList(text);
+      if (result.players.length === 0) {
+        showImportError('Não foi possível extrair jogadores da lista. Verifique o formato.');
+        return;
+      }
+      
+      // Verificar duplicatas dentro da lista importada
+      const lowerCaseNames = new Set();
+      const duplicates = [];
+      
+      result.players.forEach(player => {
+        const lowerName = player.name.toLowerCase();
+        if (lowerCaseNames.has(lowerName)) {
+          duplicates.push(player.name);
+        }
+        lowerCaseNames.add(lowerName);
+      });
+      
+      if (duplicates.length > 0) {
+        showImportError(`A lista contém nomes duplicados: ${duplicates.join(", ")}. Corrija a lista antes de importar.`);
+        return;
+      }
+      
+      // Limpar lista atual e adicionar jogadores importados
+      players = [];
+      result.players.forEach(player => {
+        players.push({
+          id: Date.now() + Math.random(),
+          name: player.name,
+          rating: player.rating
+        });
+      });
+      
+      updatePlayersList();
+      
+      // Mensagem de sucesso com informação sobre níveis atualizados
+      let successMessage = `${result.players.length} jogadores importados com sucesso!`;
+      if (result.foundInDb > 0) {
+        successMessage += ` (${result.foundInDb} jogadores tiveram seus níveis atualizados do banco de dados)`;
+      }
+      showImportSuccess(successMessage);
+    } catch (error) {
+      showImportError('Erro ao processar a lista: ' + error.message);
+    }
+  });
+  
+  // Gerar times
+  generateTeamsButton.addEventListener('click', function() {
+    // A verificação de quantidade mínima é feita dentro da função generateTeams
+    const teams = generateTeams();
+    
+    if (teams) {
+      displayTeams(teams);
+      exportTeams(teams);
+      clearError();
+      
+      // Rolar até os times gerados
+      teamsContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+  
+  // Função para distribuir jogadores entre times de forma desigual, 
+  // mas mantendo o equilíbrio o máximo possível
+  function distributePlayersAmongTeams(totalPlayers, numberOfTeams, idealPlayersPerTeam) {
+    // Inicializar a distribuição com o número mínimo de jogadores por time
+    const distribution = Array(numberOfTeams).fill(Math.floor(totalPlayers / numberOfTeams));
+    
+    // Distribuir os jogadores restantes
+    let remainingPlayers = totalPlayers % numberOfTeams;
+    
+    // Se não há jogadores suficientes para o ideal, vamos distribuir o que temos
+    if (totalPlayers < idealPlayersPerTeam * numberOfTeams) {
+      // Vamos garantir que a diferença entre o número de jogadores por time
+      // seja no máximo 1, para manter o equilíbrio
+      for (let i = 0; i < remainingPlayers; i++) {
+        distribution[i]++;
+      }
+    } else {
+      // Se temos jogadores suficientes para o ideal, cada time recebe o ideal
+      for (let i = 0; i < numberOfTeams; i++) {
+        distribution[i] = idealPlayersPerTeam;
+      }
+      
+      // Distribuir jogadores extras, se houver
+      const extraPlayers = totalPlayers - (idealPlayersPerTeam * numberOfTeams);
+      for (let i = 0; i < extraPlayers; i++) {
+        distribution[i]++;
+      }
+    }
+    
+    return distribution;
+  }
+  
+  // Nova função generateTeams que suporta times com números diferentes de jogadores
+  function generateTeams() {
+    // Obter parâmetros de configuração
+    const playersPerTeam = parseInt(playersPerTeamInput.value);
+    const numberOfTeams = parseInt(numberOfTeamsSelect.value);
+    
+    // Validar parâmetros
+    if (isNaN(playersPerTeam) || playersPerTeam < 2 || playersPerTeam > 12) {
+      showError("O número de jogadores por time deve estar entre 2 e 12");
+      return null;
+    }
+    
+    if (isNaN(numberOfTeams) || numberOfTeams < 2 || numberOfTeams > 6) {
+      showError("O número de times deve estar entre 2 e 6");
+      return null;
+    }
+    
+    // Verificar se há jogadores suficientes para pelo menos 1 por time
+    if (players.length < numberOfTeams) {
+      showError(`Você precisa de pelo menos ${numberOfTeams} jogadores (1 por time para ${numberOfTeams} times). Atualmente tem ${players.length}.`);
+      return null;
+    }
+    
+    // Copiar e ordenar jogadores por classificação (do melhor para o pior)
+    const sortedPlayers = [...players].sort((a, b) => b.rating - a.rating);
+    
+    // Embaralhar jogadores de mesma classificação para adicionar aleatoriedade
+    let startIdx = 0;
+    while (startIdx < sortedPlayers.length) {
+      let endIdx = startIdx;
+      const currentRating = sortedPlayers[startIdx].rating;
+      
+      // Encontrar todos os jogadores com a mesma classificação
+      while (endIdx < sortedPlayers.length && sortedPlayers[endIdx].rating === currentRating) {
+        endIdx++;
+      }
+      
+      // Embaralhar este grupo
+      shuffleArray(sortedPlayers, startIdx, endIdx - 1);
+      startIdx = endIdx;
+    }
+    
+    // Calcular a distribuição de jogadores por time
+    const totalPlayers = sortedPlayers.length;
+    const playerDistribution = distributePlayersAmongTeams(totalPlayers, numberOfTeams, playersPerTeam);
+    
+    // Inicializar times vazios
+    const teams = [];
+    for (let i = 0; i < numberOfTeams; i++) {
+      teams.push({ 
+        players: [], 
+        totalRating: 0,
+        targetPlayers: playerDistribution[i] // Quantos jogadores este time deve ter
+      });
+    }
+    
+    // Primeiro, distribuir os melhores jogadores para times com menos jogadores
+    // Ordenar times por número alvo de jogadores (crescente)
+    const teamsBySize = [...teams].sort((a, b) => a.targetPlayers - b.targetPlayers);
+    
+    // Alocar os melhores jogadores primeiro para times com menos jogadores
+    let playerIndex = 0;
+    
+    // Primeira passagem: distribuir 1 jogador de alto nível para cada time,
+    // começando pelos times com menos jogadores
+    for (let i = 0; i < teamsBySize.length; i++) {
+      if (playerIndex < sortedPlayers.length) {
+        teamsBySize[i].players.push(sortedPlayers[playerIndex]);
+        teamsBySize[i].totalRating += sortedPlayers[playerIndex].rating;
+        playerIndex++;
+      }
+    }
+    
+    // Segunda passagem: continuar distribuindo jogadores até atingir as metas
+    while (playerIndex < sortedPlayers.length) {
+      // Encontrar o time com a menor proporção (rating total / jogadores alvo)
+      let minRatioTeam = null;
+      let minRatio = Infinity;
+      
+      for (let i = 0; i < teamsBySize.length; i++) {
+        if (teamsBySize[i].players.length < teamsBySize[i].targetPlayers) {
+          const currentRatio = teamsBySize[i].totalRating / teamsBySize[i].targetPlayers;
+          if (currentRatio < minRatio) {
+            minRatio = currentRatio;
+            minRatioTeam = teamsBySize[i];
+          }
+        }
+      }
+      
+      // Se todos os times já atingiram suas metas, sair do loop
+      if (minRatioTeam === null) {
+        break;
+      }
+      
+      // Adicionar o próximo jogador ao time com menor proporção
+      minRatioTeam.players.push(sortedPlayers[playerIndex]);
+      minRatioTeam.totalRating += sortedPlayers[playerIndex].rating;
+      playerIndex++;
+    }
+    
+    return teams;
+  }
+  
+  // Funções de estatísticas avançadas
+  function generatePlayerStats() {
+    // Estatísticas para exibir na dashboard
+    const stats = {
+      totalPlayers: dbPlayers.length,
+      totalGames: 0,
+      avgRating: 0,
+      topPlayers: [],
+      ratingDistribution: {}
+    };
+    
+    // Inicializar distribuição de ratings
+    for (let i = 0; i <= 10; i++) {
+      stats.ratingDistribution[i] = 0;
+    }
+    
+    // Calcular estatísticas
+    let totalRating = 0;
+    let totalGamesPlayed = 0;
+    
+    dbPlayers.forEach(player => {
+      // Contar jogador na distribuição de ratings
+      stats.ratingDistribution[player.rating]++;
+      
+      // Somar para média
+      totalRating += player.rating;
+      
+      // Contar jogos
+      totalGamesPlayed += player.gamesPlayed || 0;
+    });
+    
+    stats.totalGames = totalGamesPlayed;
+    stats.avgRating = dbPlayers.length > 0 ? (totalRating / dbPlayers.length).toFixed(1) : 0;
+    
+    // Encontrar os top jogadores (mais jogos)
+    stats.topPlayers = [...dbPlayers]
+      .sort((a, b) => (b.gamesPlayed || 0) - (a.gamesPlayed || 0))
+      .slice(0, 5);
+    
+    return stats;
+  }
+  
+  // Função para criar detalhes do jogador (corrigido)
+  function createPlayerDetailsElement(player) {
+    const playerDetails = document.createElement('div');
+    playerDetails.className = 'player-details';
+    playerDetails.style.fontSize = '0.8em';
+    playerDetails.style.color = '#666';
+    playerDetails.style.marginTop = '4px';
+    
+    // Formatação de datas e informações adicionais
+    let detailsText = '';
+    if (player.gamesPlayed) {
+      detailsText += `Jogos: ${player.gamesPlayed} | `;
+    }
+    
+    if (player.lastUpdated) {
+      const lastUpdate = new Date(player.lastUpdated);
+      const formattedDate = `${lastUpdate.getDate()}/${lastUpdate.getMonth()+1}/${lastUpdate.getFullYear()}`;
+      detailsText += `Atualizado: ${formattedDate}`;
+    }
+    
+    playerDetails.textContent = detailsText;
+    return playerDetails;
+  }
+  
+  // Adicionar um botão de relatório de estatísticas
+  const statsButton = document.createElement('button');
+  statsButton.textContent = 'Estatísticas do Banco';
+  statsButton.style.backgroundColor = '#34495e';
+  statsButton.style.position = 'absolute';
+  statsButton.style.top = '20px';
+  statsButton.style.right = '20px';
+  document.querySelector('#tab-database .player-form').appendChild(statsButton);
+  
+  statsButton.addEventListener('click', function() {
+    const stats = generatePlayerStats();
+    
+    // Criar modal
+    const statsModal = document.createElement('div');
+    statsModal.style.position = 'fixed';
+    statsModal.style.top = '0';
+    statsModal.style.left = '0';
+    statsModal.style.width = '100%';
+    statsModal.style.height = '100%';
+    statsModal.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    statsModal.style.zIndex = '1000';
+    
+    const modalContent = document.createElement('div');
+    modalContent.style.position = 'relative';
+    modalContent.style.width = '80%';
+    modalContent.style.maxWidth = '800px';
+    modalContent.style.backgroundColor = 'white';
+    modalContent.style.margin = '50px auto';
+    modalContent.style.padding = '20px';
+    modalContent.style.borderRadius = '8px';
+    modalContent.style.maxHeight = '80vh';
+    modalContent.style.overflowY = 'auto';
+    
+    const closeButton = document.createElement('span');
+    closeButton.textContent = '×';
+    closeButton.style.position = 'absolute';
+    closeButton.style.top = '10px';
+    closeButton.style.right = '15px';
+    closeButton.style.fontSize = '24px';
+    closeButton.style.cursor = 'pointer';
+    closeButton.addEventListener('click', function() {
+      document.body.removeChild(statsModal);
+    });
+    
+    // Conteúdo das estatísticas
+    let content = `
+      <h2 style="text-align: center; margin-bottom: 20px;">Estatísticas do Banco de Jogadores</h2>
+      
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 30px;">
+        <div style="flex: 1; min-width: 200px; background-color: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 2em; color: #2c3e50;">${stats.totalPlayers}</div>
+          <div>Jogadores</div>
+        </div>
+        
+        <div style="flex: 1; min-width: 200px; background-color: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 2em; color: #2c3e50;">${stats.totalGames}</div>
+          <div>Jogos Realizados</div>
+        </div>
+        
+        <div style="flex: 1; min-width: 200px; background-color: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 2em; color: #2c3e50;">${stats.avgRating}</div>
+          <div>Nível Médio</div>
+        </div>
+      </div>
+      
+      <h3>Jogadores Mais Ativos</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+        <thead>
+          <tr>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nome</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Nível</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Jogos</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    stats.topPlayers.forEach(player => {
+      content += `
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 8px;">${player.name}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${player.rating}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${player.gamesPlayed || 0}</td>
+        </tr>
+      `;
+    });
+    
+    content += `
+        </tbody>
+      </table>
+      
+      <h3>Distribuição por Nível</h3>
+      <div style="display: flex; align-items: flex-end; height: 200px; margin-bottom: 10px;">
+    `;
+    
+    // Encontrar o valor máximo para normalizar a altura das barras
+    const maxCount = Math.max(...Object.values(stats.ratingDistribution));
+    
+    // Gerar gráfico de barras para distribuição de ratings
+    for (let i = 0; i <= 10; i++) {
+      const count = stats.ratingDistribution[i];
+      const height = maxCount > 0 ? Math.max((count / maxCount) * 180, 5) : 5;
+      
+      content += `
+        <div style="flex: 1; text-align: center; margin: 0 2px;">
+          <div style="height: ${height}px; background-color: #3498db; margin: 0 auto;"></div>
+          <div style="margin-top: 5px;">${i}</div>
+          <div style="font-size: 0.8em;">${count}</div>
+        </div>
+      `;
+    }
+    
+    content += `
+      </div>
+    `;
+    
+    modalContent.innerHTML = content;
+    modalContent.appendChild(closeButton);
+    statsModal.appendChild(modalContent);
+    
+    // Fechar ao clicar fora do modal
+    statsModal.addEventListener('click', function(event) {
+      if (event.target === statsModal) {
+        document.body.removeChild(statsModal);
+      }
+    });
+    
+    document.body.appendChild(statsModal);
+  });
+  
+  // Copiar times exportados
+  copyExportButton.addEventListener('click', function() {
+    exportTeamsArea.select();
+    document.execCommand('copy');
+    this.textContent = 'Copiado!';
+    setTimeout(() => {
+      this.textContent = 'Copiar para Área de Transferência';
+    }, 2000);
+  });
+  
+  // Funções para atualizar as listas de jogadores
+  function updatePlayersList() {
+    playersContainer.innerHTML = '';
+    
+    // Atualizar a contagem de jogadores diretamente no DOM
+    const playerCount = document.querySelector('#player-count');
+    if(playerCount) {
+      playerCount.textContent = players.length;
+    }
+    
+    players.sort((a, b) => b.rating - a.rating).forEach(player => {
+      const playerItem = document.createElement('div');
+      playerItem.className = 'player-item';
+      
+      const playerInfo = document.createElement('div');
+      playerInfo.className = 'player-info';
+      playerInfo.textContent = `${player.name} - Nível: ${player.rating}`;
+      
+      const playerActions = document.createElement('div');
+      playerActions.className = 'player-actions';
+      
+      const editButton = document.createElement('button');
+      editButton.textContent = 'Editar';
+      editButton.addEventListener('click', function() {
+        playerNameInput.value = player.name;
+        playerRatingSelect.value = player.rating;
+        editingPlayerId = player.id;
+        addPlayerButton.textContent = 'Atualizar';
+        clearError();
+      });
+      
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Remover';
+      deleteButton.style.backgroundColor = '#e74c3c';
+      deleteButton.addEventListener('click', function() {
+        players = players.filter(p => p.id !== player.id);
+        updatePlayersList();
+        clearError();
+      });
+      
+      playerActions.appendChild(editButton);
+      playerActions.appendChild(deleteButton);
+      
+      playerItem.appendChild(playerInfo);
+      playerItem.appendChild(playerActions);
+      
+      playersContainer.appendChild(playerItem);
+    });
+  }
+  
+  // Função para salvar jogadores do banco de dados no localStorage
+  function saveDbPlayers() {
+    try {
+      localStorage.setItem('volleyDbPlayers', JSON.stringify(dbPlayers));
+    } catch (e) {
+      console.error("Erro ao salvar jogadores no localStorage:", e);
+    }
+  }
+  
+  function updateDbPlayersList() {
+    dbPlayersContainer.innerHTML = '';
+    dbPlayerCountElement.textContent = dbPlayers.length;
+    
+    // Salvar no localStorage sempre que a lista for atualizada
+    saveDbPlayers();
+    
+    // Aplicar filtros de busca e ordenação
+    let filteredPlayers = [...dbPlayers];
+    
+    // Filtrar por termo de busca
+    const searchTerm = dbSearchInput.value.toLowerCase().trim();
+    if (searchTerm) {
+      filteredPlayers = filteredPlayers.filter(player => 
+        player.name.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    // Filtrar por rating
+    const ratingFilter = ratingFilterSelect.value;
+    if (ratingFilter !== 'all') {
+      const filterRating = parseInt(ratingFilter);
+      filteredPlayers = filteredPlayers.filter(player => player.rating === filterRating);
+    }
+    
+    // Aplicar ordenação
+    const sortBy = sortBySelect.value;
+    switch (sortBy) {
+      case 'rating-desc':
+        filteredPlayers.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'rating-asc':
+        filteredPlayers.sort((a, b) => a.rating - b.rating);
+        break;
+      case 'name-asc':
+        filteredPlayers.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'name-desc':
+        filteredPlayers.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case 'games-desc':
+        filteredPlayers.sort((a, b) => (b.gamesPlayed || 0) - (a.gamesPlayed || 0));
+        break;
+      case 'recent':
+        filteredPlayers.sort((a, b) => new Date(b.lastUpdated || 0) - new Date(a.lastUpdated || 0));
+        break;
+    }
+    
+    filteredPlayers.forEach(player => {
+      const playerItem = document.createElement('div');
+      playerItem.className = 'player-item';
+      
+      const playerInfo = document.createElement('div');
+      playerInfo.className = 'player-info';
+      playerInfo.textContent = `${player.name} - Nível: ${player.rating}`;
+      
+      // Adicionar detalhes do jogador se disponíveis
+      const playerDetails = createPlayerDetailsElement(player);
+      if (playerDetails.textContent) {
+        playerInfo.appendChild(playerDetails);
+      }
+      
+      const playerActions = document.createElement('div');
+      playerActions.className = 'player-actions';
+      
+      // Botão de detalhes
+      const detailsButton = document.createElement('button');
+      detailsButton.textContent = 'Detalhes';
+      detailsButton.style.backgroundColor = '#9b59b6';
+      detailsButton.addEventListener('click', function() {
+        showPlayerDetails(player);
+      });
+      
+      const editButton = document.createElement('button');
+      editButton.textContent = 'Editar';
+      editButton.addEventListener('click', function() {
+        dbPlayerNameInput.value = player.name;
+        dbPlayerRatingSelect.value = player.rating;
+        editingDbPlayerId = player.id;
+        addDbPlayerButton.textContent = 'Atualizar';
+        clearDbError();
+      });
+      
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Remover';
+      deleteButton.style.backgroundColor = '#e74c3c';
+      deleteButton.addEventListener('click', function() {
+        if (confirm(`Tem certeza que deseja remover ${player.name} do banco de dados?`)) {
+          dbPlayers = dbPlayers.filter(p => p.id !== player.id);
+          updateDbPlayersList();
+          clearDbError();
+        }
+      });
+      
+      const addToTeamButton = document.createElement('button');
+      addToTeamButton.textContent = 'Adicionar aos Times';
+      addToTeamButton.style.backgroundColor = '#2ecc71';
+      addToTeamButton.addEventListener('click', function() {
+        // Adicionar jogador do banco de dados à lista de jogadores para geração de times
+        const newPlayer = {
+          id: Date.now(),
+          name: player.name,
+          rating: player.rating
+        };
+        players.push(newPlayer);
+        updatePlayersList();
+        
+        // Exibir mensagem de sucesso
+        alert(`${player.name} adicionado à lista de jogadores para geração de times!`);
+        
+        // Mudar para a aba de geração de times
+        document.querySelector('.tab[data-tab="tab-generator"]').click();
+      });
+      
+      playerActions.appendChild(detailsButton);
+      playerActions.appendChild(editButton);
+      playerActions.appendChild(deleteButton);
+      playerActions.appendChild(addToTeamButton);
+      
+      playerItem.appendChild(playerInfo);
+      playerItem.appendChild(playerActions);
+      
+      dbPlayersContainer.appendChild(playerItem);
+    });
+  }
+  
+  function displayTeams(teams) {
+    teamsContainer.innerHTML = '';
+    
+    // Obter as cores dos times selecionadas pelo usuário
+    const teamColors = {};
+    document.querySelectorAll('#team-color-inputs input[type="color"]').forEach(input => {
+      const teamNumber = input.dataset.team;
+      teamColors[teamNumber] = input.value;
+    });
+    
+    teams.forEach((team, index) => {
+      const teamElement = document.createElement('div');
+      teamElement.className = 'team';
+      
+      // Aplicar cor customizada
+      const teamColor = teamColors[index + 1] || getDefaultTeamColor(index + 1);
+      
+      const headerElement = document.createElement('div');
+      headerElement.className = 'team-header';
+      
+      // Adicionar informação sobre a quantidade de jogadores no cabeçalho
+      const idealPlayersPerTeam = parseInt(playersPerTeamInput.value);
+      const playerInfo = team.players.length === idealPlayersPerTeam 
+        ? `${team.players.length} jogadores` 
+        : `<strong>${team.players.length} jogadores</strong> <span class="team-size-info">(Time com ${team.players.length < idealPlayersPerTeam ? 'menos' : 'mais'} jogadores)</span>`;
+      
+      headerElement.innerHTML = `Time ${index + 1}<br>${playerInfo}`;
+      headerElement.style.backgroundColor = teamColor;
+      
+      const playersElement = document.createElement('div');
+      playersElement.className = 'team-players';
+      
+      team.players.forEach((player, playerIndex) => {
+        const playerElement = document.createElement('div');
+        playerElement.className = 'team-player';
+        playerElement.innerHTML = `
+          <span>${playerIndex + 1}. ${player.name}</span>
+          <span>Nível: ${player.rating}</span>
+        `;
+        playersElement.appendChild(playerElement);
+      });
+      
+      const statsElement = document.createElement('div');
+      statsElement.className = 'team-stats';
+      const avgRating = (team.totalRating / team.players.length).toFixed(2);
+      statsElement.textContent = `Média do time: ${avgRating} | Total: ${team.totalRating}`;
+      
+      teamElement.appendChild(headerElement);
+      teamElement.appendChild(playersElement);
+      teamElement.appendChild(statsElement);
+      
+      teamsContainer.appendChild(teamElement);
+    });
+  }
+  
+  // Função para obter cor padrão do time
+  function getDefaultTeamColor(teamNumber) {
+    const defaultColors = {
+      1: '#e74c3c', // Vermelho
+      2: '#3498db', // Azul
+      3: '#2ecc71', // Verde
+      4: '#f39c12', // Laranja
+      5: '#9b59b6', // Roxo
+      6: '#1abc9c'  // Turquesa
+    };
+    
+    return defaultColors[teamNumber] || '#666666';
+  }
+  
+  function exportTeams(teams) {
+    let exportText = '';
+    
+    teams.forEach((team, index) => {
+      const idealPlayersPerTeam = parseInt(playersPerTeamInput.value);
+      const playerCountInfo = team.players.length !== idealPlayersPerTeam ? 
+        `(${team.players.length} jogadores)` : '';
+        
+      exportText += `*Time ${index + 1} ${playerCountInfo}*\n`;
+      
+      team.players.forEach((player, playerIndex) => {
+        exportText += `\t${playerIndex + 1}.\t${player.name} (${player.rating})\n`;
+      });
+      
+      const avgRating = (team.totalRating / team.players.length).toFixed(2);
+      exportText += `*Total de estrelas: ${team.totalRating} | Média: ${avgRating}*\n`;
+      
+      if (index < teams.length - 1) {
+        exportText += `⸻\n`;
+      }
+    });
+    
+    exportTeamsArea.value = exportText;
+    exportSection.style.display = 'block';
+    
+    // Registrar jogadores do banco de dados que foram usados
+    updatePlayerStats(teams);
+  }
+  
+  // Função para atualizar estatísticas de jogadores no banco de dados
+  function updatePlayerStats(teams) {
+    // Extrair todos os jogadores dos times gerados
+    const generatedPlayers = [];
+    teams.forEach((team, teamIndex) => {
+      team.players.forEach(player => {
+        generatedPlayers.push({
+          name: player.name,
+          teamNumber: teamIndex + 1,
+          date: new Date().toISOString()
+        });
+      });
+    });
+    
+    // Para cada jogador gerado, encontrar no banco de dados e atualizar estatísticas
+    generatedPlayers.forEach(genPlayer => {
+      // Procurar no banco de dados por nome (case insensitive)
+      const dbPlayerIndex = dbPlayers.findIndex(p => 
+        p.name.toLowerCase() === genPlayer.name.toLowerCase()
+      );
+      
+      if (dbPlayerIndex !== -1) {
+        // Incrementar contagem de jogos
+        dbPlayers[dbPlayerIndex].gamesPlayed = (dbPlayers[dbPlayerIndex].gamesPlayed || 0) + 1;
+        
+        // Adicionar ao histórico de times
+        if (!dbPlayers[dbPlayerIndex].teams) {
+          dbPlayers[dbPlayerIndex].teams = [];
+        }
+        
+        dbPlayers[dbPlayerIndex].teams.push({
+          teamNumber: genPlayer.teamNumber,
+          date: genPlayer.date
+        });
+        
+        // Atualizar data de última atualização
+        dbPlayers[dbPlayerIndex].lastUpdated = new Date().toISOString();
+      }
+    });
+    
+    // Salvar alterações no banco de dados
+    saveDbPlayers();
+  }
+  
+  function shuffleArray(array, start, end) {
+    for (let i = end; i > start; i--) {
+      const j = Math.floor(Math.random() * (i - start + 1)) + start;
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+  
+  function showError(message) {
+    errorMessageElement.textContent = message;
+  }
+  
+  function clearError() {
+    errorMessageElement.textContent = '';
+  }
+  
+  function showDbError(message) {
+    dbErrorMessageElement.textContent = message;
+  }
+  
+  function clearDbError() {
+    dbErrorMessageElement.textContent = '';
+  }
+  
+  function showImportError(message) {
+    importErrorElement.textContent = message;
+    importSuccessElement.textContent = '';
+  }
+  
+  function showImportSuccess(message) {
+    importSuccessElement.textContent = message;
+    importErrorElement.textContent = '';
+  }
+  
+  // Adicionar navegação por abas
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      // Remover classe active de todas as abas
+      tabs.forEach(t => t.classList.remove('active'));
+      
+      // Adicionar classe active à aba clicada
+      this.classList.add('active');
+      
+      // Esconder todos os conteúdos de abas
+      const tabContents = document.querySelectorAll('.tab-content');
+      tabContents.forEach(content => content.classList.remove('active'));
+      
+      // Mostrar o conteúdo correspondente à aba clicada
+      const tabId = this.getAttribute('data-tab');
+      document.getElementById(tabId).classList.add('active');
+    });
+  });
+  
+  // Adicionar jogadores de exemplo ao banco de dados apenas se o banco estiver vazio
+  if (dbPlayers.length === 0) {
+    const exampleDbPlayers = [
+      { name: "Daniel", rating: 6 },
+      { name: "Matheus", rating: 5 },
+      { name: "Rodolfo", rating: 7 },
+      { name: "Fernanda", rating: 3 },
+      { name: "João", rating: 8 },
+      { name: "Bruna", rating: 4 },
+      { name: "Jarule", rating: 6 },
+      { name: "Silvana", rating: 5 },
+      { name: "Deja", rating: 4 }
+    ];
+    
+    const now = new Date().toISOString();
+    exampleDbPlayers.forEach(player => {
+      dbPlayers.push({
+        id: Date.now() + Math.random(),
+        name: player.name,
+        rating: player.rating,
+        dateAdded: now,
+        lastUpdated: now,
+        gamesPlayed: 0,
+        teams: []
+      });
+    });
+    
+    // Salvar no localStorage
+    saveDbPlayers();
+  }
+  
+  // Inicializar seletores de cores de times
+  updateTeamColorInputs();
+  
+  // Inicializar as listas de jogadores
+  updateDbPlayersList();
+  updatePlayersList();
+});
+
+// Código secreto - implementação do botão de drag-and-drop
+let secretCode = '';
+let secretSequence = '13403143';
+let editModeActive = false;
+
+// Criar botão secreto (invisível)
+document.addEventListener('DOMContentLoaded', function() {
+  // Botão de edição secreto
+  const secretButton = document.createElement('button');
+  secretButton.id = 'secret-edit-button';
+  secretButton.textContent = 'Editar Times';
+  secretButton.style.display = 'none';
+  secretButton.style.position = 'fixed';
+  secretButton.style.bottom = '20px';
+  secretButton.style.right = '20px';
+  secretButton.style.zIndex = '9999';
+  secretButton.style.backgroundColor = '#e74c3c';
+  secretButton.style.color = 'white';
+  secretButton.style.padding = '10px 15px';
+  secretButton.style.borderRadius = '5px';
+  secretButton.style.border = 'none';
+  secretButton.style.cursor = 'pointer';
+  secretButton.style.fontWeight = 'bold';
+  secretButton.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+  document.body.appendChild(secretButton);
+  
+  // Variáveis para o sistema de drag-and-drop
+  let draggedElement = null;
+  let originalTeam = null;
+  
+  // Função para ativar o botão secreto
+  document.addEventListener('keydown', function(event) {
+    // Apenas adicionar dígitos ao código
+    if(/^\d$/.test(event.key)) {
+      secretCode += event.key;
+      
+      // Verificar se o código secreto foi digitado
+      if(secretCode.includes(secretSequence)) {
+        secretButton.style.display = 'block';
+        
+        // Resetar o código para evitar ativações repetidas
+        secretCode = '';
+        
+        // Auto-ocultar após 10 segundos se não clicado
+        setTimeout(() => {
+          if(secretButton.style.display === 'block' && !editModeActive) {
+            secretButton.style.display = 'none';
+          }
+        }, 10000);
+      }
+      
+      // Limitar o tamanho do código
+      if(secretCode.length > 20) {
+        secretCode = secretCode.slice(-20);
+      }
+    }
+  });
+  
+  // Ativar/desativar modo de edição
+  secretButton.addEventListener('click', function() {
+    editModeActive = !editModeActive;
+    
+    if(editModeActive) {
+      // Ativar modo de edição
+      secretButton.textContent = 'Salvar Alterações';
+      secretButton.style.backgroundColor = '#2ecc71';
+      enableDragAndDrop();
+    } else {
+      // Desativar modo de edição e salvar alterações
+      secretButton.textContent = 'Editar Times';
+      secretButton.style.backgroundColor = '#e74c3c';
+      disableDragAndDrop();
+      secretButton.style.display = 'none';
+    }
+  });
+  
+  // Habilitar funcionalidade de drag-and-drop
+  function enableDragAndDrop() {
+    const teamPlayers = document.querySelectorAll('.team-player');
+    const teams = document.querySelectorAll('.team');
+    
+    // Adicionar containers apropriados se não existirem
+    teams.forEach((team, index) => {
+      team.setAttribute('data-team-id', index + 1);
+      
+      // Certificar que temos um container para jogadores
+      let playersContainer = team.querySelector('.team-players');
+      if (!playersContainer) {
+        playersContainer = document.createElement('div');
+        playersContainer.className = 'team-players';
+        
+        // Pegar os elementos de jogador existentes
+        const existingPlayers = team.querySelectorAll('.team-player');
+        
+        // Inserir o container após o cabeçalho
+        const teamHeader = team.querySelector('.team-header');
+        if (teamHeader) {
+          teamHeader.insertAdjacentElement('afterend', playersContainer);
+          
+          // Mover os jogadores para o container
+          existingPlayers.forEach(player => {
+            playersContainer.appendChild(player);
+          });
+        }
+      }
+    });
+    
+    // Processar os elementos de jogador
+    teamPlayers.forEach((playerElement, globalIndex) => {
+      // Extrair informações do jogador
+      const nameSpan = playerElement.querySelector('span:first-child');
+      const ratingSpan = playerElement.querySelector('span:last-child');
+      
+      if (!nameSpan || !ratingSpan) return;
+      
+      // Configurar para arrastar
+      playerElement.setAttribute('draggable', 'true');
+      playerElement.setAttribute('data-player-id', globalIndex);
+      
+      // Extrair dados
+      const fullText = nameSpan.textContent;
+      const playerIndex = fullText.split('.')[0].trim();
+      const playerName = fullText.split('.')[1].trim();
+      const playerRating = parseInt(ratingSpan.textContent.replace('Nível: ', ''));
+      
+      // Criar nova estrutura com botão para arrastar
+      playerElement.innerHTML = '';
+      
+      // Botão de arrastar
+      const dragHandle = document.createElement('div');
+      dragHandle.className = 'drag-handle';
+      dragHandle.innerHTML = '&#8597;'; // Símbolo de seta para cima e para baixo
+      dragHandle.style.cursor = 'grab';
+      dragHandle.style.marginRight = '8px';
+      dragHandle.style.color = '#666';
+      dragHandle.style.fontWeight = 'bold';
+      dragHandle.style.fontSize = '16px';
+      dragHandle.style.display = 'inline-block';
+      dragHandle.style.width = '24px';
+      dragHandle.style.textAlign = 'center';
+      dragHandle.style.border = '1px solid #ddd';
+      dragHandle.style.borderRadius = '4px';
+      dragHandle.style.padding = '2px 0';
+      dragHandle.style.backgroundColor = '#f9f9f9';
+      
+      // Número e nome
+      const indexLabel = document.createElement('span');
+      indexLabel.textContent = `${playerIndex}. `;
+      indexLabel.style.marginRight = '5px';
+      
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = playerName;
+      nameInput.style.width = '50%';
+      nameInput.style.padding = '2px 5px';
+      nameInput.style.marginRight = '5px';
+      nameInput.className = 'edit-player-name';
+      
+      // Rating
+      const ratingSelect = document.createElement('select');
+      ratingSelect.className = 'edit-player-rating';
+      ratingSelect.style.width = '60px';
+      
+      for(let i = 0; i <= 10; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = i;
+        if(i === playerRating) option.selected = true;
+        ratingSelect.appendChild(option);
+      }
+      
+      // Montar elementos
+      playerElement.appendChild(dragHandle);
+      playerElement.appendChild(indexLabel);
+      playerElement.appendChild(nameInput);
+      playerElement.appendChild(ratingSelect);
+      
+      // Adicionar eventos de drag-and-drop
+      playerElement.addEventListener('dragstart', handleDragStart);
+      playerElement.addEventListener('dragend', handleDragEnd);
+      
+      // Evento para atualizar estatísticas ao alterar rating
+      ratingSelect.addEventListener('change', function() {
+        updateTeamStats(this.closest('.team'));
+      });
+    });
+    
+    // Adicionar eventos de drop nas equipes
+    teams.forEach(team => {
+      team.addEventListener('dragover', handleDragOver);
+      team.addEventListener('dragenter', handleDragEnter);
+      team.addEventListener('dragleave', handleDragLeave);
+      team.addEventListener('drop', handleDrop);
+    });
+    
+    // Atualizar estatísticas dos times
+    updateAllTeamStats();
+  }
+  
+  // Desabilitar funcionalidade de drag-and-drop
+  function disableDragAndDrop() {
+    const teams = document.querySelectorAll('.team');
+    
+    teams.forEach(team => {
+      // Remover eventos de drag-and-drop
+      team.removeEventListener('dragover', handleDragOver);
+      team.removeEventListener('dragenter', handleDragEnter);
+      team.removeEventListener('dragleave', handleDragLeave);
+      team.removeEventListener('drop', handleDrop);
+      
+      const playerElements = team.querySelectorAll('.team-player');
+      let teamTotalRating = 0;
+      
+      playerElements.forEach((playerElement, playerIndex) => {
+        // Remover eventos de drag
+        playerElement.removeEventListener('dragstart', handleDragStart);
+        playerElement.removeEventListener('dragend', handleDragEnd);
+        playerElement.removeAttribute('draggable');
+        
+        // Extrair dados para salvar
+        const nameInput = playerElement.querySelector('.edit-player-name');
+        const ratingSelect = playerElement.querySelector('.edit-player-rating');
+        
+        if (!nameInput || !ratingSelect) return;
+        
+        const playerName = nameInput.value.trim();
+        const playerRating = parseInt(ratingSelect.value);
+        teamTotalRating += playerRating;
+        
+        // Restaurar ao formato original
+        playerElement.innerHTML = `
+          <span>${playerIndex + 1}. ${playerName}</span>
+          <span>Nível: ${playerRating}</span>
+        `;
+      });
+      
+      // Atualizar estatísticas do time
+      const statsElement = team.querySelector('.team-stats');
+      if (statsElement && playerElements.length > 0) {
+        const avgRating = (teamTotalRating / playerElements.length).toFixed(2);
+        statsElement.textContent = `Média do time: ${avgRating} | Total: ${teamTotalRating}`;
+      }
+      
+      // Atualizar o cabeçalho com a contagem de jogadores
+      const headerElement = team.querySelector('.team-header');
+      if (headerElement) {
+        const idealPlayersPerTeam = parseInt(document.getElementById('players-per-team').value);
+        const teamNumber = parseInt(team.getAttribute('data-team-id')) || 1;
+        
+        const playerInfo = playerElements.length === idealPlayersPerTeam 
+          ? `${playerElements.length} jogadores` 
+          : `<strong>${playerElements.length} jogadores</strong> <span class="team-size-info">(Time com ${playerElements.length < idealPlayersPerTeam ? 'menos' : 'mais'} jogadores)</span>`;
+        
+        headerElement.innerHTML = `Time ${teamNumber}<br>${playerInfo}`;
+      }
+    });
+    
+    // Atualizar a exportação de times
+    updateExport();
+  }
+  
+  // Funções de suporte para drag-and-drop
+  function handleDragStart(e) {
+    draggedElement = this;
+    originalTeam = this.closest('.team');
+    
+    // Visual durante o arrasto
+    this.classList.add('dragging');
+    this.style.opacity = '0.5';
+    
+    // Dados para transferência
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', this.getAttribute('data-player-id'));
+  }
+  
+  function handleDragEnd() {
+    this.classList.remove('dragging');
+    this.style.opacity = '1';
+    
+    // Limpar classes das equipes
+    document.querySelectorAll('.team').forEach(team => {
+      team.classList.remove('drag-over');
+    });
+  }
+  
+  function handleDragOver(e) {
+    if (e.preventDefault) {
+      e.preventDefault(); // Necessário para permitir o drop
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+  }
+  
+  function handleDragEnter(e) {
+    this.classList.add('drag-over');
+  }
+  
+  function handleDragLeave(e) {
+    this.classList.remove('drag-over');
+  }
+  
+  function handleDrop(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    this.classList.remove('drag-over');
+    
+    // Validar que temos elementos necessários
+    if (!draggedElement) return false;
+    
+    const targetTeam = this;
+    const targetTeamPlayers = targetTeam.querySelector('.team-players');
+    
+    if (!targetTeamPlayers) return false;
+    
+    // Mover o jogador para a nova equipe
+    if (targetTeam !== originalTeam) {
+      const originalPlayers = originalTeam.querySelector('.team-players');
+      if (originalPlayers) {
+        originalPlayers.removeChild(draggedElement);
+      }
+      targetTeamPlayers.appendChild(draggedElement);
+      
+      // Renumerar jogadores
+      renumeratePlayers(originalTeam);
+      renumeratePlayers(targetTeam);
+      
+      // Atualizar estatísticas
+      updateTeamStats(originalTeam);
+      updateTeamStats(targetTeam);
+      
+      // Atualizar cabeçalhos com contagens de jogadores
+      updateHeaderPlayerCount(originalTeam);
+      updateHeaderPlayerCount(targetTeam);
+    }
+    
+    return false;
+  }
+  
+  // Atualiza o cabeçalho com a contagem de jogadores
+  function updateHeaderPlayerCount(team) {
+    const headerElement = team.querySelector('.team-header');
+    const playerElements = team.querySelectorAll('.team-player');
+    const teamNumber = parseInt(team.getAttribute('data-team-id')) || 1;
+    const idealPlayersPerTeam = parseInt(document.getElementById('players-per-team').value);
+    
+    if (headerElement) {
+      const playerInfo = playerElements.length === idealPlayersPerTeam 
+        ? `${playerElements.length} jogadores` 
+        : `<strong>${playerElements.length} jogadores</strong> <span class="team-size-info">(Time com ${playerElements.length < idealPlayersPerTeam ? 'menos' : 'mais'} jogadores)</span>`;
+      
+      headerElement.innerHTML = `Time ${teamNumber}<br>${playerInfo}`;
+    }
+  }
+  
+  // Atualiza as estatísticas de um time específico
+  function updateTeamStats(team) {
+    const playerElements = team.querySelectorAll('.team-player');
+    let teamTotalRating = 0;
+    
+    playerElements.forEach(player => {
+      const ratingSelect = player.querySelector('.edit-player-rating');
+      if (ratingSelect) {
+        teamTotalRating += parseInt(ratingSelect.value);
+      }
+    });
+    
+    // Atualizar estatísticas
+    const statsElement = team.querySelector('.team-stats');
+    if (statsElement && playerElements.length > 0) {
+      const avgRating = (teamTotalRating / playerElements.length).toFixed(2);
+      statsElement.textContent = `Média do time: ${avgRating} | Total: ${teamTotalRating}`;
+    }
+  }
+  
+  // Atualiza as estatísticas de todos os times
+  function updateAllTeamStats() {
+    const teams = document.querySelectorAll('.team');
+    teams.forEach(team => updateTeamStats(team));
+  }
+  
+  // Renumera os jogadores em um time
+  function renumeratePlayers(team) {
+    const playerElements = team.querySelectorAll('.team-player');
+    playerElements.forEach((player, index) => {
+      const indexLabel = player.querySelector('span');
+      if (indexLabel) {
+        indexLabel.textContent = `${index + 1}. `;
+      }
+    });
+  }
+  
+  // Atualiza a seção de exportação
+  function updateExport() {
+    const exportTeamsArea = document.getElementById('export-teams');
+    const exportSection = document.getElementById('export-section');
+    
+    if (!exportTeamsArea || !exportSection) return;
+    
+    const teams = document.querySelectorAll('.team');
+    let exportText = '';
+    
+    teams.forEach((team, index) => {
+      const playerElements = team.querySelectorAll('.team-player');
+      const idealPlayersPerTeam = parseInt(document.getElementById('players-per-team').value);
+      const playerCountInfo = playerElements.length !== idealPlayersPerTeam ? 
+        `(${playerElements.length} jogadores)` : '';
+      
+      exportText += `*Time ${index + 1} ${playerCountInfo}*\n`;
+      
+      playerElements.forEach((playerElement, playerIndex) => {
+        const nameInput = playerElement.querySelector('.edit-player-name');
+        const ratingSelect = playerElement.querySelector('.edit-player-rating');
+        
+        if (nameInput && ratingSelect) {
+          const name = nameInput.value.trim();
+          const rating = ratingSelect.value;
+          exportText += `\t${playerIndex + 1}.\t${name} (${rating})\n`;
+        } else {
+          const nameSpan = playerElement.querySelector('span:first-child');
+          const ratingSpan = playerElement.querySelector('span:last-child');
+          
+          if (nameSpan && ratingSpan) {
+            const fullText = nameSpan.textContent;
+            const playerName = fullText.split('.')[1].trim();
+            const playerRating = parseInt(ratingSpan.textContent.replace('Nível: ', ''));
+            exportText += `\t${playerIndex + 1}.\t${playerName} (${playerRating})\n`;
+          }
+        }
+      });
+      
+      const statsElement = team.querySelector('.team-stats');
+      if (statsElement) {
+        exportText += `${statsElement.textContent}\n`;
+      }
+      
+      if (index < teams.length - 1) {
+        exportText += `⸻\n`;
+      }
+    });
+    
+    exportTeamsArea.value = exportText;
+    exportSection.style.display = 'block';
+  }
+});
+  </script>
+</body>
+</html>
